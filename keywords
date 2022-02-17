@@ -1,0 +1,39 @@
+import pandas as pd
+import jieba
+import csv
+import re
+import numpy as np
+from collections import Counter
+from pprint import pprint
+from jieba import analyse
+
+###切词###
+
+#导入自定义词典
+jieba.load_userdict("userdict.txt")
+
+#导入停用词词典
+stopwords = pd.read_csv('stop_words_CN.txt', encoding='utf-8',quoting=csv.QUOTE_NONE,names=['stopword'], index_col=False)
+stop_list = stopwords['stopword'].tolist()
+
+#读取文件
+data = pd.read_excel('Tmall_Categpry_Product_Match.xlsx', encoding='utf_8')
+
+#文本预处理
+data.dropna(how = 'any')#清除空值
+data = data.applymap((lambda x: "".join(x.split()) if type(x) is str else x)) #清除空格
+
+#切词
+data['cut'] = data['new_title'].apply(lambda x : [i for i in jieba.cut(x) if i not in stop_list])
+data.head()
+
+###关键词tf-idf提取###
+
+#创建导出文件
+test_keywords = open('test_keywords.csv','w',encoding='utf_8_sig')
+
+#逐行提取关键词并导出
+for i in range(0,len(data)):
+    result = analyse.extract_tags(str(data.cut[i]), topK=5, withWeight=False)#topK为关键词数量，withWeight=True则显示分值
+    keywords = [data.new_title[i] , result]
+    print(keywords, file = test_keywords)
