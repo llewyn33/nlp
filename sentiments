@@ -1,0 +1,29 @@
+import pandas as pd
+from snownlp import SnowNLP
+
+#读取文件
+# data = pd.read_csv('纸尿裤情感度.csv', encoding='utf-8')
+# data = data.astype({'content':'str'})#将dataframe的某一列或多列规定格式
+data = pd.read_excel('Super Stay EC Data Demo.xlsx', encoding='utf_8')
+
+#情感分析
+sentiments = []
+sentiments = data.content.apply(lambda x: SnowNLP(x).sentiments)
+
+#合并为dataframe
+output = pd.DataFrame({'comments':data.content,'sentiments':sentiments})
+output= output.sort_values(by="sentiments" , ascending=False)
+
+#导出文件
+output.to_csv('test_sentiments.csv',sep=',',index=False,header=False,encoding='utf_8_sig')
+
+###sentiments以0.5位分界线，>0.5为正面情绪，<小于0.5为负面情绪
+###为强化情感程度一般>0.6为正面情绪，<0.4为负面情绪，0.4<sentiments<0.6为中性情绪
+
+pos = output.comments[output.sentiments >= 0.6]
+neg = output.comments[output.sentiments <= 0.4]
+neutral = output.comments[(output.sentiments < 0.6) & (output.sentiments > 0.4)]
+
+print('正面情绪' + str(len(pos)) +'条，占比' + str(format(len(pos)/(len(pos)+len(neg)+len(neutral)), '.2%')))
+print('负面情绪' + str(len(neg)) +'条，占比' + str(format(len(neg)/(len(pos)+len(neg)+len(neutral)), '.2%')))
+print('中性情绪' + str(len(neutral)) +'条，占比' + str(format(len(neutral)/(len(pos)+len(neg)+len(neutral)), '.2%')))
