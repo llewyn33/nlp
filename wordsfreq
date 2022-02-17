@@ -1,0 +1,48 @@
+import pandas as pd
+import jieba
+import csv
+import re
+from collections import Counter
+from pprint import pprint
+import numpy as np
+
+###切词###
+
+#导入自定义词典
+jieba.load_userdict("userdict.txt")
+
+#导入停用词词典
+stopwords = pd.read_csv('stop_words_CN.txt', encoding='utf-8',quoting=csv.QUOTE_NONE,names=['stopword'], index_col=False)
+stop_list = stopwords['stopword'].tolist()
+
+#读取csv/xlsx文件
+data = pd.read_excel('咨询类.xlsx', encoding='utf_8')
+# data = data[(data.诉求区域 == '静安区')]
+#data = pd.read_excel('wx.xlsx')
+data = data.astype({'内容描述':'str'})
+
+#文本预处理
+
+data.dropna(how = 'any')#清除空值
+data = data.applymap((lambda x: "".join(x.split()) if type(x) is str else x)) #清除空格
+
+
+#切词
+data['cut'] = data['内容描述'].apply(lambda x : [i for i in jieba.cut(x) if i not in stop_list])
+data.head()
+
+###词频统计###
+
+words = []
+
+for content in data['cut']:
+    words.extend(content)
+    
+counter = Counter(words)
+output = counter.most_common(300)
+output = dict(output)
+
+###生成文件###
+
+# with open('test_freq.csv', 'w', encoding='utf_8_sig') as f:
+#     [f.write('{0},{1}\n'.format(key, value)) for key, value in output.items()]
